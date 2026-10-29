@@ -1,67 +1,67 @@
-// Set your Google Apps Script Web App URL after deploying[cite: 1]
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRFx2qbJQsx6SotmwAKxuC1zjXxpSmqbE2yJJnmLySzLQdGyxAhKuK5SVs5NwHzMi5/exec';[cite: 1]
+// Set your Google Apps Script Web App URL after deploying
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRFx2qbJQsx6SotmwAKxuC1zjXxpSmqbE2yJJnmLySzLQdGyxAhKuK5SVs5NwHzMi5/exec';
 
 let state = {
   activeStudents: [],
   responders: [],
   selectedStudent: null,
   selectedResponder: null
-};[cite: 1]
+};
 
-// DOM Elements[cite: 1]
-const studentListEl = document.getElementById('student-list');[cite: 1]
-const responderListEl = document.getElementById('responder-list');[cite: 1]
-const responderPanelEl = document.getElementById('panel-responders');[cite: 1]
-const statusPanelEl = document.getElementById('panel-status');[cite: 1]
-const resolveBtn = document.getElementById('resolve-btn');[cite: 1]
-const statusMsgEl = document.getElementById('status-message');[cite: 1]
-const notesModal = document.getElementById('notes-modal');[cite: 1]
-const responseNotesInput = document.getElementById('response-notes');[cite: 1]
-const modalCancelBtn = document.getElementById('modal-cancel-btn');[cite: 1]
-const modalSubmitBtn = document.getElementById('modal-submit-btn');[cite: 1]
+// DOM Elements
+const studentListEl = document.getElementById('student-list');
+const responderListEl = document.getElementById('responder-list');
+const responderPanelEl = document.getElementById('panel-responders');
+const statusPanelEl = document.getElementById('panel-status');
+const resolveBtn = document.getElementById('resolve-btn');
+const statusMsgEl = document.getElementById('status-message');
+const notesModal = document.getElementById('notes-modal');
+const responseNotesInput = document.getElementById('response-notes');
+const modalCancelBtn = document.getElementById('modal-cancel-btn');
+const modalSubmitBtn = document.getElementById('modal-submit-btn');
 
 document.addEventListener('DOMContentLoaded', () => {
-  fetchDashboardData();[cite: 1]
-  // Timer to update elapsed times every 30 seconds[cite: 1]
-  setInterval(updateElapsedTimesUI, 30000);[cite: 1]
+  fetchDashboardData();
+  // Timer to update elapsed times every 30 seconds
+  setInterval(updateElapsedTimesUI, 30000);
 });
 
 async function fetchDashboardData() {
-  studentListEl.innerHTML = '<p class="status-msg">Loading active alerts...</p>';[cite: 1]
+  studentListEl.innerHTML = '<p class="status-msg">Loading active alerts...</p>';
   try {
-    const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getDashboardData`);[cite: 1]
-    const result = await response.json();[cite: 1]
+    const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getDashboardData`);
+    const result = await response.json();
     if (result.status === 'success') {
-      state.activeStudents = result.students || [];[cite: 1]
-      state.responders = result.responders || [];[cite: 1]
-      renderStudentList();[cite: 1]
-      renderResponderList();[cite: 1]
+      state.activeStudents = result.students || [];
+      state.responders = result.responders || [];
+      renderStudentList();
+      renderResponderList();
     } else {
-      throw new Error(result.message || 'Error fetching data');[cite: 1]
+      throw new Error(result.message || 'Error fetching data');
     }
   } catch (err) {
-    console.error('Fetch error:', err);[cite: 1]
-    studentListEl.innerHTML = `<p class="status-msg" style="color: red;">Failed to load data. Please check Web App URL.</p>`;[cite: 1]
+    console.error('Fetch error:', err);
+    studentListEl.innerHTML = `<p class="status-msg" style="color: red;">Failed to load data. Please check Web App URL.</p>`;
   }
 }
 
 function renderStudentList() {
-  studentListEl.innerHTML = '';[cite: 1]
+  studentListEl.innerHTML = '';
   if (state.activeStudents.length === 0) {
-    studentListEl.innerHTML = '<p class="status-msg">No active Level 2 requests.</p>';[cite: 1]
-    return;[cite: 1]
+    studentListEl.innerHTML = '<p class="status-msg">No active Level 2 requests.</p>';
+    return;
   }
 
   state.activeStudents.forEach((student) => {
-    // Label: Col A + space + Col B first char[cite: 1]
-    const colA = String(student.colA || '').trim();[cite: 1]
-    const colB = String(student.colB || '').trim();[cite: 1]
-    const firstCharB = colB.length > 0 ? colB.charAt(0).toUpperCase() : '';[cite: 1]
-    const displayLabel = `${colA} ${firstCharB}`.trim();[cite: 1]
-    const locationText = student.location || 'Location unspecified';[cite: 1]
+    // Label: Col A + space + Col B first char
+    const colA = String(student.colA || '').trim();
+    const colB = String(student.colB || '').trim();
+    const firstCharB = colB.length > 0 ? colB.charAt(0).toUpperCase() : '';
+    const displayLabel = `${colA} ${firstCharB}`.trim();
+    const locationText = student.location || 'Location unspecified';
 
-    const btn = document.createElement('button');[cite: 1]
-    btn.className = 'student-card-btn';[cite: 1]
+    const btn = document.createElement('button');
+    btn.className = 'student-card-btn';
     btn.innerHTML = `
       <div class="student-name">${displayLabel}</div>
       <div class="student-location">${locationText}</div>
@@ -72,114 +72,114 @@ function renderStudentList() {
 }
 
 function renderResponderList() {
-  responderListEl.innerHTML = '';[cite: 1]
+  responderListEl.innerHTML = '';
   if (state.responders.length === 0) {
-    responderListEl.innerHTML = '<p class="placeholder-text">No responders found.</p>';[cite: 1]
-    return;[cite: 1]
+    responderListEl.innerHTML = '<p class="placeholder-text">No responders found.</p>';
+    return;
   }
 
   state.responders.forEach(name => {
-    const btn = document.createElement('button');[cite: 1]
-    btn.className = 'responder-btn';[cite: 1]
-    btn.textContent = name;[cite: 1]
-    btn.addEventListener('click', () => selectResponder(name, btn));[cite: 1]
-    responderListEl.appendChild(btn);[cite: 1]
+    const btn = document.createElement('button');
+    btn.className = 'responder-btn';
+    btn.textContent = name;
+    btn.addEventListener('click', () => selectResponder(name, btn));
+    responderListEl.appendChild(btn);
   });
 }
 
 function selectStudent(studentData, displayLabel, btnElement) {
-  state.selectedStudent = { ...studentData, displayLabel };[cite: 1]
-  state.selectedResponder = null;[cite: 1]
+  state.selectedStudent = { ...studentData, displayLabel };
+  state.selectedResponder = null;
 
-  document.querySelectorAll('.student-card-btn').forEach(b => b.classList.remove('selected'));[cite: 1]
-  btnElement.classList.add('selected');[cite: 1]
+  document.querySelectorAll('.student-card-btn').forEach(b => b.classList.remove('selected'));
+  btnElement.classList.add('selected');
 
-  // Activate Panel 2, reset Panel 3[cite: 1]
-  responderPanelEl.classList.remove('disabled');[cite: 1]
-  statusPanelEl.classList.add('disabled');[cite: 1]
-  document.querySelectorAll('.responder-btn').forEach(b => b.classList.remove('selected'));[cite: 1]
-  resolveBtn.disabled = true;[cite: 1]
-  resolveBtn.textContent = 'Select a responder';[cite: 1]
+  // Activate Panel 2, reset Panel 3
+  responderPanelEl.classList.remove('disabled');
+  statusPanelEl.classList.add('disabled');
+  document.querySelectorAll('.responder-btn').forEach(b => b.classList.remove('selected'));
+  resolveBtn.disabled = true;
+  resolveBtn.textContent = 'Select a responder';
 }
 
 function selectResponder(responderName, btnElement) {
-  state.selectedResponder = responderName;[cite: 1]
+  state.selectedResponder = responderName;
 
-  document.querySelectorAll('.responder-btn').forEach(b => b.classList.remove('selected'));[cite: 1]
-  btnElement.classList.add('selected');[cite: 1]
+  document.querySelectorAll('.responder-btn').forEach(b => b.classList.remove('selected'));
+  btnElement.classList.add('selected');
 
-  // Activate Panel 3[cite: 1]
-  statusPanelEl.classList.remove('disabled');[cite: 1]
-  resolveBtn.disabled = false;[cite: 1]
-  resolveBtn.textContent = `Level 2 for ${state.selectedStudent.displayLabel} resolved`;[cite: 1]
+  // Activate Panel 3
+  statusPanelEl.classList.remove('disabled');
+  resolveBtn.disabled = false;
+  resolveBtn.textContent = `Level 2 for ${state.selectedStudent.displayLabel} resolved`;
 }
 
-// Modal handling[cite: 1]
+// Modal handling
 resolveBtn.addEventListener('click', () => {
-  if (!state.selectedStudent || !state.selectedResponder) return;[cite: 1]
-  if (responseNotesInput) responseNotesInput.value = '';[cite: 1]
-  notesModal.classList.remove('hidden');[cite: 1]
+  if (!state.selectedStudent || !state.selectedResponder) return;
+  if (responseNotesInput) responseNotesInput.value = '';
+  notesModal.classList.remove('hidden');
 });
 
 modalCancelBtn.addEventListener('click', () => {
-  notesModal.classList.add('hidden');[cite: 1]
+  notesModal.classList.add('hidden');
 });
 
 modalSubmitBtn.addEventListener('click', async () => {
-  // Capture notes input cleanly directly from the input element[cite: 1]
-  const notesText = responseNotesInput ? responseNotesInput.value.trim() : '';[cite: 1]
+  // Capture notes input cleanly directly from the input element
+  const notesText = responseNotesInput ? responseNotesInput.value.trim() : '';
 
-  notesModal.classList.add('hidden');[cite: 1]
-  resolveBtn.disabled = true;[cite: 1]
-  statusMsgEl.style.color = '#1a73e8';[cite: 1]
-  statusMsgEl.textContent = 'Submitting resolution...';[cite: 1]
+  notesModal.classList.add('hidden');
+  resolveBtn.disabled = true;
+  statusMsgEl.style.color = '#1a73e8';
+  statusMsgEl.textContent = 'Submitting resolution...';
 
-  // Defensive check for student name fields[cite: 1]
-  const colA = state.selectedStudent ? (state.selectedStudent.colA || '') : '';[cite: 1]
-  const colB = state.selectedStudent ? (state.selectedStudent.colB || '') : '';[cite: 1]
+  // Defensive check for student name fields
+  const colA = state.selectedStudent ? (state.selectedStudent.colA || '') : '';
+  const colB = state.selectedStudent ? (state.selectedStudent.colB || '') : '';
 
   const payload = {
-    action: 'resolveLevel2',[cite: 1]
-    studentColA: colA,[cite: 1]
-    studentColB: colB,[cite: 1]
-    teacher: state.selectedStudent ? state.selectedStudent.teacher : '',[cite: 1]
-    requestTimestamp: state.selectedStudent ? state.selectedStudent.requestTimestamp : '',[cite: 1]
-    responder: state.selectedResponder,[cite: 1]
-    notes: notesText,[cite: 1]
-    responseTimestamp: new Date().toLocaleString()[cite: 1]
+    action: 'resolveLevel2',
+    studentColA: colA,
+    studentColB: colB,
+    teacher: state.selectedStudent ? state.selectedStudent.teacher : '',
+    requestTimestamp: state.selectedStudent ? state.selectedStudent.requestTimestamp : '',
+    responder: state.selectedResponder,
+    notes: notesText,
+    responseTimestamp: new Date().toLocaleString()
   };
 
   try {
-    // Use text/plain for no-cors to prevent browser header stripping[cite: 1]
+    // Use text/plain for no-cors to prevent browser header stripping
     await fetch(GOOGLE_APPS_SCRIPT_URL, {
-      method: 'POST',[cite: 1]
-      mode: 'no-cors',[cite: 1]
-      headers: { 'Content-Type': 'text/plain' },[cite: 1]
-      body: JSON.stringify(payload)[cite: 1]
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
     });
 
-    statusMsgEl.style.color = '#137333';[cite: 1]
-    statusMsgEl.textContent = 'Resolved successfully!';[cite: 1]
+    statusMsgEl.style.color = '#137333';
+    statusMsgEl.textContent = 'Resolved successfully!';
     setTimeout(() => {
-      statusMsgEl.textContent = '';[cite: 1]
-      resetPanels();[cite: 1]
-      fetchDashboardData();[cite: 1]
-    }, 2000);[cite: 1]
+      statusMsgEl.textContent = '';
+      resetPanels();
+      fetchDashboardData();
+    }, 2000);
   } catch (err) {
-    console.error('Submit error:', err);[cite: 1]
-    statusMsgEl.style.color = '#d93025';[cite: 1]
-    statusMsgEl.textContent = 'Failed to submit. Check connection.';[cite: 1]
-    resolveBtn.disabled = false;[cite: 1]
+    console.error('Submit error:', err);
+    statusMsgEl.style.color = '#d93025';
+    statusMsgEl.textContent = 'Failed to submit. Check connection.';
+    resolveBtn.disabled = false;
   }
 });
 
 function resetPanels() {
-  state.selectedStudent = null;[cite: 1]
-  state.selectedResponder = null;[cite: 1]
-  responderPanelEl.classList.add('disabled');[cite: 1]
-  statusPanelEl.classList.add('disabled');[cite: 1]
-  resolveBtn.disabled = true;[cite: 1]
-  resolveBtn.textContent = 'Select student & responder';[cite: 1]
+  state.selectedStudent = null;
+  state.selectedResponder = null;
+  responderPanelEl.classList.add('disabled');
+  statusPanelEl.classList.add('disabled');
+  resolveBtn.disabled = true;
+  resolveBtn.textContent = 'Select student & responder';
 }
 
 function updateElapsedTimesUI() {
