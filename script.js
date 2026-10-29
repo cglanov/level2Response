@@ -131,7 +131,7 @@ function selectResponder(responderName, btnElement) {
 // Modal handling
 resolveBtn.addEventListener('click', () => {
   if (!state.selectedStudent || !state.selectedResponder) return;
-  responseNotesInput.value = '';
+  if (responseNotesInput) responseNotesInput.value = '';
   notesModal.classList.remove('hidden');
 });
 
@@ -140,29 +140,35 @@ modalCancelBtn.addEventListener('click', () => {
 });
 
 modalSubmitBtn.addEventListener('click', async () => {
-  const notes = responseNotesInput.value.trim();
+  // Capture notes input cleanly
+  const notesText = responseNotesInput ? responseNotesInput.value.trim() : '';
   notesModal.classList.add('hidden');
 
   resolveBtn.disabled = true;
   statusMsgEl.style.color = '#1a73e8';
   statusMsgEl.textContent = 'Submitting resolution...';
 
+  // Defensive check for student name fields
+  const colA = state.selectedStudent ? (state.selectedStudent.colA || '') : '';
+  const colB = state.selectedStudent ? (state.selectedStudent.colB || '') : '';
+
   const payload = {
     action: 'resolveLevel2',
-    studentColA: state.selectedStudent.colA,
-    studentColB: state.selectedStudent.colB,
-    teacher: state.selectedStudent.teacher,
-    requestTimestamp: state.selectedStudent.requestTimestamp,
+    studentColA: colA,
+    studentColB: colB,
+    teacher: state.selectedStudent ? state.selectedStudent.teacher : '',
+    requestTimestamp: state.selectedStudent ? state.selectedStudent.requestTimestamp : '',
     responder: state.selectedResponder,
-    notes: notes,
+    notes: notesText,
     responseTimestamp: new Date().toLocaleString()
   };
 
   try {
+    // Use text/plain for no-cors to prevent browser header stripping
     await fetch(GOOGLE_APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
 
