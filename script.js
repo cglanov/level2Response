@@ -1,5 +1,5 @@
 // Set your Google Apps Script Web App URL after deploying
-const GOOGLE_APPS_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRFx2qbJQsx6SotmwAKxuC1zjXxpSmqbE2yJJnmLySzLQdGyxAhKuK5SVs5NwHzMi5/exec';
 
 let state = {
   activeStudents: [],
