@@ -22,7 +22,7 @@ const modalSubmitBtn = document.getElementById('modal-submit-btn');
 
 document.addEventListener('DOMContentLoaded', () => {
   fetchDashboardData(true);
-  // Timer to update elapsed times every 30 seconds
+  // Refresh active alerts every 30 seconds without clearing active selections
   setInterval(() => fetchDashboardData(false), 30000);
 });
 
@@ -46,7 +46,7 @@ async function fetchDashboardData(showLoading = false) {
       state.activeStudents = result.students || [];
       state.responders = result.responders || [];
 
-      // If the currently selected student was already resolved elsewhere, reset panels
+      // If the currently selected student was resolved on another device, reset panels
       if (
         state.selectedStudent &&
         !state.activeStudents.some((s) => isSameStudent(s, state.selectedStudent))
@@ -184,6 +184,7 @@ modalSubmitBtn.addEventListener('click', async () => {
   };
 
   try {
+    // Use text/plain for no-cors to prevent browser header stripping
     await fetch(GOOGLE_APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -213,4 +214,13 @@ function resetPanels() {
   statusPanelEl.classList.add('disabled');
   resolveBtn.disabled = true;
   resolveBtn.textContent = 'Select student & responder';
+}
+
+// Register Service Worker for PWA installability
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      console.error('Service worker registration failed:', err);
+    });
+  });
 }
