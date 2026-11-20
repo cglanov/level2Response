@@ -21,19 +21,39 @@ const modalCancelBtn = document.getElementById('modal-cancel-btn');
 const modalSubmitBtn = document.getElementById('modal-submit-btn');
 
 document.addEventListener('DOMContentLoaded', () => {
-  fetchDashboardData();
+  fetchDashboardData(true);
   // Timer to update elapsed times every 30 seconds
-  setInterval(updateElapsedTimesUI, 30000);
+  setInterval(() => fetchDashboardData(false), 30000);
 });
 
-async function fetchDashboardData() {
-  studentListEl.innerHTML = '<p class="status-msg">Loading active alerts...</p>';
+function isSameStudent(a, b) {
+  if (!a || !b) return false;
+  return (
+    String(a.colA || '').trim() === String(b.colA || '').trim() &&
+    String(a.colB || '').trim() === String(b.colB || '').trim() &&
+    String(a.requestTimestamp || '') === String(b.requestTimestamp || '')
+  );
+}
+
+async function fetchDashboardData(showLoading = false) {
+  if (showLoading) {
+    studentListEl.innerHTML = '<p class="status-msg">Loading active alerts...</p>';
+  }
   try {
     const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getDashboardData`);
     const result = await response.json();
     if (result.status === 'success') {
       state.activeStudents = result.students || [];
       state.responders = result.responders || [];
+
+      // If the currently selected student was already resolved elsewhere, reset panels
+      if (
+        state.selectedStudent &&
+        !state.activeStudents.some((s) => isSameStudent(s, state.selectedStudent))
+      ) {
+        resetPanels();
+      }
+
       renderStudentList();
       renderResponderList();
     } else {
@@ -41,7 +61,9 @@ async function fetchDashboardData() {
     }
   } catch (err) {
     console.error('Fetch error:', err);
-    studentListEl.innerHTML = `<p class="status-msg" style="color: red;">Failed to load data. Please check Web App URL.</p>`;
+    if (showLoading) {
+      studentListEl.innerHTML = `<p class="status-msg" style="color: red;">Failed to load data. Please check Web App URL.</p>`;
+    }
   }
 }
 
@@ -62,9 +84,15 @@ function renderStudentList() {
 
     const btn = document.createElement('button');
     btn.className = 'student-card-btn';
+    if (isSameStudent(student, state.selectedStudent)) {
+      btn.classList.add('selected');
+    }
+
     btn.innerHTML = `
-      <div class="student-name">${displayLabel}</div>
-      <div class="student-location">${locationText}</div>
+      <div class="student-info">
+        <div class="student-name">${displayLabel}</div>
+        <div class="student-location">${locationText}</div>
+      </div>
     `;
     btn.addEventListener('click', () => selectStudent(student, displayLabel, btn));
     studentListEl.appendChild(btn);
@@ -78,9 +106,12 @@ function renderResponderList() {
     return;
   }
 
-  state.responders.forEach(name => {
+  state.responders.forEach((name) => {
     const btn = document.createElement('button');
     btn.className = 'responder-btn';
+    if (state.selectedResponder === name) {
+      btn.classList.add('selected');
+    }
     btn.textContent = name;
     btn.addEventListener('click', () => selectResponder(name, btn));
     responderListEl.appendChild(btn);
@@ -91,21 +122,26 @@ function selectStudent(studentData, displayLabel, btnElement) {
   state.selectedStudent = { ...studentData, displayLabel };
   state.selectedResponder = null;
 
-  document.querySelectorAll('.student-card-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.student-card-btn').forEach((b) => b.classList.remove('selected'));
   btnElement.classList.add('selected');
 
   // Activate Panel 2, reset Panel 3
   responderPanelEl.classList.remove('disabled');
   statusPanelEl.classList.add('disabled');
-  document.querySelectorAll('.responder-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.responder-btn').forEach((b) => b.classList.remove('selected'));
   resolveBtn.disabled = true;
   resolveBtn.textContent = 'Select a responder';
+
+  // Ensure responder panel is visible on shorter mobile viewports
+  if (window.innerWidth <= 768) {
+    responderPanelEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 function selectResponder(responderName, btnElement) {
   state.selectedResponder = responderName;
 
-  document.querySelectorAll('.responder-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.responder-btn').forEach((b) => b.classList.remove('selected'));
   btnElement.classList.add('selected');
 
   // Activate Panel 3
@@ -126,7 +162,6 @@ modalCancelBtn.addEventListener('click', () => {
 });
 
 modalSubmitBtn.addEventListener('click', async () => {
-  // Capture notes input cleanly directly from the input element
   const notesText = responseNotesInput ? responseNotesInput.value.trim() : '';
 
   notesModal.classList.add('hidden');
@@ -134,7 +169,6 @@ modalSubmitBtn.addEventListener('click', async () => {
   statusMsgEl.style.color = '#1a73e8';
   statusMsgEl.textContent = 'Submitting resolution...';
 
-  // Defensive check for student name fields
   const colA = state.selectedStudent ? (state.selectedStudent.colA || '') : '';
   const colB = state.selectedStudent ? (state.selectedStudent.colB || '') : '';
 
@@ -150,7 +184,6 @@ modalSubmitBtn.addEventListener('click', async () => {
   };
 
   try {
-    // Use text/plain for no-cors to prevent browser header stripping
     await fetch(GOOGLE_APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -163,7 +196,7 @@ modalSubmitBtn.addEventListener('click', async () => {
     setTimeout(() => {
       statusMsgEl.textContent = '';
       resetPanels();
-      fetchDashboardData();
+      fetchDashboardData(false);
     }, 2000);
   } catch (err) {
     console.error('Submit error:', err);
@@ -180,8 +213,4 @@ function resetPanels() {
   statusPanelEl.classList.add('disabled');
   resolveBtn.disabled = true;
   resolveBtn.textContent = 'Select student & responder';
-}
-
-function updateElapsedTimesUI() {
-  fetchDashboardData();
 }
